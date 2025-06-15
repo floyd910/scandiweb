@@ -1,0 +1,15 @@
+{
+  "name": "user/svandiweb-test",
+  "autoload": {
+    "psr-4": {
+      "User\\Scandiweb\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "floyd910",
+      "email": "lgelava7@gmail.com"
+    }
+  ],
+  "require": {}
+}
