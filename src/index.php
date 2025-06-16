@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // === MYSQL CONNECTION (RAILWAY) ===
 $host = 'mysql.railway.internal';
 $port = 3306;
-$db   = 'scandiweb_test';
+$db   = 'railway'; // Your database name from Railway credentials
 $user = 'root';
 $pass = 'dMpTthwQWGaAOxuVDllLAVLlYqgCRuKL';
 
@@ -25,7 +25,8 @@ try {
     $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    echo "✅ Connected successfully<br>";
+    // For debugging only, remove on production:
+    // echo "✅ Connected successfully<br>";
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Database connection failed', 'details' => $e->getMessage()]);
@@ -41,7 +42,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $scriptName = dirname($_SERVER['SCRIPT_NAME']);
 
-$scriptPath = '/scandiweb/src/index.php'; // adjust if needed
+$scriptPath = '/scandiweb/src/index.php'; // adjust if your index.php path is different
 
 if (strpos($path, $scriptPath) === 0) {
     $path = substr($path, strlen($scriptPath));
