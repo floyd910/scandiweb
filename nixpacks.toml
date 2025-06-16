@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Packages.composer", "libmysqlclient", "nginx"]
+
+[phases.build]
+cmds = ["composer install --ignore-platform-reqs"]
+
+[start]
+cmd = "php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf"
