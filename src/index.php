@@ -1,37 +1,52 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Allow CORS for local dev
+use User\Scandiweb\ProductRepository;
+use User\Scandiweb\ProductController;
+
+// === CORS HEADERS ===
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
+// === MYSQL CONNECTION (RAILWAY) ===
+$host = 'mysql.railway.internal';
+$port = 3306;
+$db   = 'scandiweb_test';
+$user = 'root';
+$pass = 'dMpTthwQWGaAOxuVDllLAVLlYqgCRuKL';
 
-use User\Scandiweb\ProductRepository;
-use User\Scandiweb\ProductController;
+try {
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$pdo = new PDO('mysql:host=127.0.0.1;dbname=scandiweb_test;charset=utf8', 'root', '');
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "✅ Connected successfully<br>";
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed', 'details' => $e->getMessage()]);
+    exit();
+}
 
+// === INIT CONTROLLER ===
 $productRepo = new ProductRepository($pdo);
 $productController = new ProductController($productRepo);
 
+// === ROUTING ===
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $scriptName = dirname($_SERVER['SCRIPT_NAME']);
 
-$scriptPath = '/scandiweb/src/index.php'; // adjust this if your folder is different
+$scriptPath = '/scandiweb/src/index.php'; // adjust if needed
 
 if (strpos($path, $scriptPath) === 0) {
     $path = substr($path, strlen($scriptPath));
 }
-$path = rtrim($path, '/'); // remove trailing slash if any
+$path = rtrim($path, '/');
 
 if (strpos($path, $scriptName) === 0) {
     $path = substr($path, strlen($scriptName));
@@ -40,12 +55,14 @@ $path = rtrim($path, '/');
 
 header('Content-Type: application/json');
 
+// === GET /products ===
 if ($method === 'GET' && $path === '/products') {
     $products = $productController->listProducts();
     echo json_encode($products);
     exit;
 }
 
+// === POST /products ===
 if ($method === 'POST' && $path === '/products') {
     $data = json_decode(file_get_contents('php://input'), true);
 
@@ -64,6 +81,8 @@ if ($method === 'POST' && $path === '/products') {
     }
     exit;
 }
+
+// === POST /products/delete ===
 if ($method === 'POST' && $path === '/products/delete') {
     $raw = file_get_contents('php://input');
     $data = json_decode($raw, true);
@@ -78,7 +97,6 @@ if ($method === 'POST' && $path === '/products/delete') {
         exit;
     }
 
-    // Proceed to delete
     $success = $productRepo->deleteBySkus($data['skus']);
     if ($success) {
         echo json_encode(['message' => 'Products deleted']);
@@ -89,7 +107,6 @@ if ($method === 'POST' && $path === '/products/delete') {
     exit;
 }
 
-
-
+// === 404 fallback ===
 http_response_code(404);
 echo json_encode(['error' => 'Endpoint not found']);
